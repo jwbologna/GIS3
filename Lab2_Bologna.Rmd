@@ -1,0 +1,60 @@
+---
+title: "Lab2_Bologna"
+author: "Justin Bologna"
+date: "April 18, 2020"
+output: html_document
+---
+##Lab 2 - Descriptive Statistics and Basic Mapping
+
+Today we are going to be examining a dataset of selected socioeconomic indicators in Chicago form the period 
+2008 - 2012. The file was downloaded as a non-spatial CSV from the Chicago Data Portal website.  
+
+First, let's set up our R environment and load the packages we need.
+
+```{r, message=FALSE}
+setwd("~/UChicago 19-20/Spring/GIS III/wd/lab2")
+library(sf)
+library(dplyr)
+library(spData)
+```
+
+
+Since our dataset of interest is non-spatial, we must joing it to a spatial shapefile of Chicago community areas. 
+Let's read these files into our R environment and join them.
+
+```{r}
+indicators <- read.csv("selected_indicators.csv", stringsAsFactors = FALSE)
+ca <- st_read("ca.shp")
+
+indicators[76,2] <- "OHARE"
+indicators[,2] <- toupper(indicators[,2])
+indicators <- rename(indicators, community = COMMUNITY.AREA.NAME)
+
+indicators_spatial <- left_join(ca, indicators, by="community")
+```
+
+We had to tweak the names of some columns and fields to get them to match before we could join, but now we have a
+spatial version of the data. Let's examine the summary statistics for a few select variables.
+
+```{r}
+summary(indicators_spatial[,c(14,16,17)])
+```
+
+Next, let's focus on one specific indicator: the hardship index. We can generate a histogram with the following code:
+
+```{r}
+Hardship_Index <- indicators_spatial$HARDSHIP.INDEX
+hist(Hardship_Index)
+```
+
+Since we went through the trouble of making our dataset spatial, let's map the Hardship Index too.
+
+```{r}
+plot(indicators_spatial[,17])
+```
+
+##Works Cited
+
+Chicago Data Portal. (2014). *Census Data - Selected socioeconomic indicators in Chicago, 2008 - 2012* [CSV]. https://data.cityofchicago.org/Health-Human-Services/Census-Data-Selected-socioeconomic-indicators-in-C/kn9c-c2s2. 
+
+Chicago Data Portal. (2018). *Boundaries - Community Areas (current)* [Shapefile]. https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Community-Areas-current-/cauq-8yn6. 
