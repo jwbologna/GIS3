@@ -1,0 +1,48 @@
+---
+title: "Lab3_Bologna"
+author: "Justin Bologna"
+date: "April 23, 2020"
+output: html_document
+---
+##Lab 3: Mapping Divvy Bicycle Stations from an API
+
+Today we'll be pulling a dataset straight from the web to produce a map of Divvy bicycle stations around Chicago. First, let's load our packages.
+
+```{r, message=FALSE}
+library(ggmap)
+library(jsonlite)
+library(dplyr)
+library(rgdal)
+library(tmap)
+```
+
+Now, let's read the JSON from the web, convert it to a dataframe, and clean the data a bit.
+
+```{r}
+divvy1<- fromJSON(txt="https://data.cityofchicago.org/resource/bk89-9dk7.json")
+divvy2 <- divvy1 %>% select(1,3,5,7,12,13)
+divvy2[,2] <- as.numeric(divvy2[,2])
+divvy2[,3] <- as.numeric(divvy2[,3])
+divvy2[,4] <- as.numeric(divvy2[,4])
+divvy2[,5] <- as.numeric(divvy2[,5])
+divvy2[,6] <- as.numeric(divvy2[,6])
+head(divvy2)
+```
+
+Great. Next we need to convert the non-spatial data frame into a spatial points data frame using the latitude and longitude columns of the table. A quick plot shows that we've done it successfully. 
+
+```{r}
+divvy_spdf <- SpatialPointsDataFrame(coords = cbind(divvy2$longitude, divvy2$latitude), data = divvy2, proj4string = CRS("+init=epsg:4326"))
+plot(divvy_spdf)
+```
+
+Now let's create a more polished, interactive map to show the locations of Divvy stations and how many active docks there are at each station. We will do this using tmap and leaflet, since 
+
+```{r}
+m <- tm_shape(divvy_spdf)+
+  tm_dots(col='total_docks', title='Total Docks', size=0.05)+
+  tm_basemap(leaflet::providers$Esri.WorldGrayCanvas, alpha=1)+
+  tm_layout(title="Divvy Bicycle Stations in Chicago")
+  
+tmap_leaflet(m)
+```
